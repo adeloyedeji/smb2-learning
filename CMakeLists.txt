@@ -1,0 +1,4 @@
+project(SMBL)
+
+cmake_minimum_required(3.20.0)
+
