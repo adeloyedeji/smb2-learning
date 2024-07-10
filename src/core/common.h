@@ -2,6 +2,8 @@
 #define _COMMON_H_
 
 #include <stdint.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #define DIALECT_2_0_2   0x0202
 #define DIALECT_2_1_0   0x0210
@@ -107,6 +109,170 @@ struct smb2_error_response {
     char Reserved;
     int ByteCount;
     struct smb2_error_context_response *ErrorData;
+};
+
+struct global_config {
+    bool RequireMessageSigning;
+    bool IsEncryptionSupported;
+    bool IsCompressionSupported;
+    bool IsChainedCompressionSupported;
+    bool IsRDMATransformSupported;
+    bool DisableEncryptionOverSecureTransport;
+    bool IsSigningCapabilitiesSupported;
+    bool IsTransportCapabilitiesSupported;
+};
+
+struct client_global_config {
+    short ClientGuid[8];
+    short MaxDialect;
+    bool RequireSecureNegotiate;
+    bool CompressAllRequests;
+    bool IsMutualAuthOverQUICSupported;
+    struct hash *ConnectionTable;
+    struct hash *GlobalFileTable;
+    struct hash *ServerName;
+    struct hash *ShareList;
+    struct hash *ClientCertificateMappingTable;
+};
+
+struct server;
+struct user_credentials;
+struct file_id;
+struct date_time;
+
+struct client_smb2_transport_connection {
+    struct hash *SessionTable;
+    struct hash *PreauthSessionTable;
+    struct hash *OutstandingRequests;
+    struct hash *SequenceWindow;
+    void *GSSNegotiateToken;
+    int MaxTransactSize;
+    int MaxReadSize;
+    int MaxWriteSize;
+    short ServerGuid[8];
+    bool RequireSigning;
+    char ServerName[255];
+    short Dialect;
+    bool SupportsFileLeasing;
+    bool SupportsMultiCredit;
+    short ClientGuid[8];
+    bool SupportsDirectoryLeasing;
+    bool SupportsMultiChannel;
+    bool SupportsPersistentHandles;
+    bool SupportsEncryption;
+    void *ClientCapabilities;
+    void *ServerCapabilities;
+    short ClientSecurityMode;
+    short ServerSecurityMode;
+    struct server *Server;
+    void *Dialects;
+    short PreauthIntegrityHashId;
+    short PreauthIntegrityHashValue;
+    short CipherId;
+    short *CompressionIds;
+    bool SupportsChainedCompression;
+    short *RDMATransformIds;
+    short SigningAlgorithmId;
+    bool AcceptTransportSecurity;
+};
+
+struct client_smb2_channel {
+    char SigningKey[1024];
+    struct client_smb2_transport_connection *Connection;
+};
+
+struct client_smb2_session {
+    int SessionId[2];
+    struct hash *TreeConnectTable;
+    char SessionKey[16];
+    bool SigningRequired;
+    struct client_smb2_transport_connection *Connection;
+    struct user_credentials *UserCredentials;
+    struct hash *OpenTable;
+    bool IsAnonymous;
+    bool ISGuest;
+    struct client_smb2_channel *ChannelList;
+    short ChannelSequence;
+    bool EncryptData;
+    short EncryptionKey;
+    short DecryptionKey;
+    short SigningKey[8];
+    short ApplicationKey[8];
+    short PreauthIntegrityHashValue;
+    void *FullSessionKey;
+};
+
+struct client_smb2_tree_connect {
+    char ShareName[255];
+    int TreeConnectId;
+    struct client_smb2_session *Session;
+    bool IsDfsShare;
+    bool IsCAShare;
+    bool EncryptData;
+    bool IsScaleoutShare;
+    bool CompressData;
+};
+
+struct client_smb2_open_file {
+    struct hash *OpenTable;
+    short LeaseKey[8];
+    short LeaseState;
+    int LeaseEpoch;
+};
+
+struct client_smb2_lock_operations {
+    int SequenceNumber;
+    bool Free;
+};
+
+struct client_smb2_application_open_file {
+    struct file_id *FileId;
+    struct client_smb2_tree_connect *TreeConnect;
+    struct client_smb2_transport_connection *Connection;
+    struct client_smb2_session *Session;
+    short OplockLevel;
+    bool Durable;
+    char FileName[255];
+    bool ResilientHandle;
+    struct date_time *LastDisconnectTime;
+    int ResilientTimeout;
+    struct client_smb2_lock_operations OperationBuckets[64];
+    short DesiredAccess;
+    short ShareMode;
+    short CreateOptions;
+    short FileAttributes;
+    short CreateDisposition;
+    int DurableTimeout;
+    struct hash *OutstandingRequests;
+    short CreateGuid[8];
+    bool IsPersistent;
+};
+
+struct client_smb2_channel {
+    short SigningKey[8];
+    struct client_smb2_transport_connection *Connection;
+};
+
+struct smb2_addresses {
+    struct in_addr IPv4;
+    struct in6_addr IPv6;
+};
+
+struct client_smb2_server {
+    short ServerGuid[8];
+    short DialectRevision;
+    void *Capabilities;
+    short SecurityMode;
+    struct smb2_addresses *AddressList;
+    char ServerName[255];
+    short CipherId;
+    short *RDMATransformIds;
+    short SigningAlgorithmId;
+};
+
+struct client_smb2_share {
+    char PathName[255];
+    bool EncryptData;
 };
 
 #endif //_COMMON_H_
