@@ -25,6 +25,7 @@
 #include <fcntl.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -207,6 +208,32 @@ static inline unsigned int hash_int64_crc32(const void *keyptr)
 
 #endif
 
+static int lwan_getentropy_fallback(void *buffer, size_t buffer_len)
+{
+    int fd;
+
+    fd = open("/dev/urandom", O_CLOEXEC | O_RDONLY);
+    if (fd < 0) {
+        fd = open("/dev/random", O_CLOEXEC | O_RDONLY);
+        if (fd < 0)
+            return -1;
+    }
+    ssize_t total_read = read(fd, buffer, buffer_len);
+    close(fd);
+
+    return total_read == (ssize_t)buffer_len ? 0 : -1;
+}
+
+long int lwan_getentropy(void *buffer, size_t buffer_len, int flags)
+{
+    long r = syscall(SYS_getrandom, buffer, buffer_len, flags);
+
+    if (r < 0)
+        return lwan_getentropy_fallback(buffer, buffer_len);
+
+    return r;
+}
+
 __attribute__((constructor(65535))) static void initialize_fnv1a_seed(void)
 {
     uint8_t entropy[128];
@@ -214,13 +241,14 @@ __attribute__((constructor(65535))) static void initialize_fnv1a_seed(void)
     /* The seeds are randomized in order to mitigate the DDoS attack
      * described by Crosby and Wallach in UsenixSec2003.  */
     if (UNLIKELY(lwan_getentropy(entropy, sizeof(entropy), 0) < 0)) {
-        lwan_status_critical_perror("Could not initialize FNV1a seed");
+        printf("Could not initialize FNV1a seed");
         __builtin_unreachable();
     }
 
     fnv1a_64_seed = fnv1a_64(entropy, sizeof(entropy));
     fnv1a_32_seed = fnv1a_32(entropy, sizeof(entropy));
-    lwan_always_bzero(entropy, sizeof(entropy));
+    // lwan_always_bzero(entropy, sizeof(entropy));
+    memset(entropy, 0, sizeof(entropy));
 
 #if defined(LWAN_HAVE_BUILTIN_CPU_INIT) && defined(LWAN_HAVE_BUILTIN_IA32_CRC32)
     __builtin_cpu_init();

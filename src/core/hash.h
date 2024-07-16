@@ -5,6 +5,10 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
+#define LIKELY_IS(x, y) __builtin_expect((x), (y))
+#define LIKELY(x) LIKELY_IS(!!(x), 1)
+#define UNLIKELY(x) LIKELY_IS((x), 0)
+
 struct hash;
 
 struct hash_iter {
@@ -57,6 +61,11 @@ static inline uint32_t fnv1a_32(const void *buffer, size_t len)
     }
 
     return hash;
+}
+
+static inline int streq(const char *a, const char *b)
+{
+    return strcmp(a, b) == 0;
 }
 
 #endif //_HASH_

@@ -2,6 +2,7 @@
 #define _COMMON_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
@@ -47,6 +48,15 @@
 #define SYMBOLIC_LINK_ERROR_RESPONSE_FLAG_ABSOLUTE  0x00000000
 #define SYNBOLIC_LINK_ERROR_RESPONSE_FLAG_RELATIVE  0x00000001
 
+#define CAPABILITIES_GLOBAL_CAP_DFS                 0x00000001
+#define CAPABILITIES_GLOBAL_CAP_LEASING             0x00000002
+#define CAPABILITIES_GLOBAL_CAP_LARGE_MTU           0x00000004
+#define CAPABILITIES_GLOBAL_CAP_MULTI_CHANNEL       0x00000008
+#define CAPABILITIES_GLOBAL_CAP_PERSISTENT_HANDLES  0x00000010
+#define CAPABILITIES_GLOBAL_CAP_DIRECTORY_LEASING   0x00000020
+#define CAPABILITIES_GLOBAL_CAP_ENCRYPTION          0x00000040
+#define CAPABILITIES_GLOBAL_CAP_NOTIFICATIONS       0x00000080
+
 struct smbd_tcp_header{
     char Zero;
     char StreamProtocolLength[3];
@@ -65,7 +75,7 @@ struct smb2_header {
     int Flags;
     int NextCommand;
     int64_t MessageId;
-    int Reserved;
+    int Reserved2;
     int TreeId;
     int64_t SessionId;
     int64_t Signature[2];
@@ -135,10 +145,14 @@ struct client_global_config {
     struct hash *ClientCertificateMappingTable;
 };
 
-struct server;
+struct client_smb2_server;
 struct user_credentials;
-struct file_id;
 struct date_time;
+
+struct file_id {
+    int Persistent[2];
+    int Volatile[2];
+};
 
 struct client_smb2_transport_connection {
     struct hash *SessionTable;
@@ -164,7 +178,7 @@ struct client_smb2_transport_connection {
     void *ServerCapabilities;
     short ClientSecurityMode;
     short ServerSecurityMode;
-    struct server *Server;
+    struct client_smb2_server *Server;
     void *Dialects;
     short PreauthIntegrityHashId;
     short PreauthIntegrityHashValue;
@@ -246,11 +260,6 @@ struct client_smb2_application_open_file {
     struct hash *OutstandingRequests;
     short CreateGuid[8];
     bool IsPersistent;
-};
-
-struct client_smb2_channel {
-    short SigningKey[8];
-    struct client_smb2_transport_connection *Connection;
 };
 
 struct smb2_addresses {
