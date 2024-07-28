@@ -63,6 +63,7 @@ struct smbd_tcp_header{
     void *SMB2Message;
 };
 
+#define SMB2_HEADER_STRUCTURE_SIZE 64
 struct smb2_header {
     char ProtocolID[4];
     short StructureSize;

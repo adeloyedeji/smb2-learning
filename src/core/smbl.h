@@ -10,4 +10,7 @@
 #include "queue.h"
 #include "util.h"
 
+
+struct smb2_header* generate_smb2_header(int credit_charge);
+
 #endif //_SMBL_H_
