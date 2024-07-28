@@ -12,6 +12,8 @@ endif()
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wshadow -Wconversion -Wformat -g -std=gnu11")
 set(SMBL_COMMON_LIBS smbl-static)
+set(STD_LIBRARY_EXT_NAME smbl-extensions)
 
 add_subdirectory(src/core)
 add_subdirectory(src/tests)
+add_subdirectory(src/extensions)
